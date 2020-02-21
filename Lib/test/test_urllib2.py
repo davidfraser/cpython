@@ -1164,6 +1164,41 @@ class HandlerTests(unittest.TestCase):
                                   "http://acme.example.com/protected"
                                  )
 
+    def test_auth_rfc_7235_example_multiple_schemes(self, quote_char='"'):
+        opener = OpenerDirector()
+        password_manager = MockPasswordManager()
+        auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
+        realm = "simple"
+        http_handler = MockHTTPHandler(
+            401, (r'WWW-Authenticate: Newauth realm="apps", type=1, '+
+            'title="Login to \"apps\"", Basic realm=%s%s%s\r\n\r\n') %
+                 (quote_char, realm, quote_char)
+        )
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
+        self._test_basic_auth(opener, auth_handler, "Authorization",
+                              realm, http_handler, password_manager,
+                              "http://acme.example.com/protected",
+                              "http://acme.example.com/protected"
+                             )
+
+    def test_auth_rfc_7235_reversed_multiple_schemes(self, quote_char='"'):
+        opener = OpenerDirector()
+        password_manager = MockPasswordManager()
+        auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
+        realm = "simple"
+        http_handler = MockHTTPHandler(
+            401, (r'WWW-Authenticate: Basic realm=%s%s%s, '+
+            'Newauth realm="apps", type=1, title="Login to \"apps\""\r\n\r\n') %
+                 (quote_char, realm, quote_char)
+        )
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
+        self._test_basic_auth(opener, auth_handler, "Authorization",
+                              realm, http_handler, password_manager,
+                              "http://acme.example.com/protected",
+                              "http://acme.example.com/protected"
+                             )
 
     def test_proxy_basic_auth(self):
         opener = OpenerDirector()
